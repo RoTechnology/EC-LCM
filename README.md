@@ -2,7 +2,7 @@
 ECTAKS implementation in C
 
 ## Overview
-The EC-LCM (Elliptic Curve - Lightweight Cryptography Module) is a software component proposed to secure communications through the implementation of a Cryptographic Scheme with Elliptic Curve approach.
+The EC-LCM (Elliptic Curve - Lightweight Cryptography Module) is a software component proposed to secure communications for resource-constrained devices through the implementation of a cryptographic scheme with Elliptic Curve approach.
 
 The EC-LCM is built for a specific [Energy ECS](https://energyecs.eu) Cyber Security Issues case study.
 
