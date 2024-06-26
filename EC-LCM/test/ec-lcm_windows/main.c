@@ -91,15 +91,15 @@ int EC_LCM_Decrypt(
     uint8_t* _encrypted_string,      //Input encrypted string
     size_t* _encrypted_string_length,//Input string length
 
-    char* _decrypted_string,         //Output decrypted string
+    uint8_t** _decrypted_string,     //Output decrypted string
     size_t* _decrypted_string_length //Output decrypted string length
 ) {
 
     int s = 1;
 
-    s = lecies_curve448_decrypt(_encrypted_string, _encrypted_string_length, 1, TEST_PRIVATE_KEY, (uint8_t**)&_decrypted_string, &_decrypted_string_length);
+    s = lecies_curve448_decrypt(_encrypted_string, _encrypted_string_length, 1, TEST_PRIVATE_KEY, _decrypted_string, _decrypted_string_length);
 
-    printf("Decrypted string: %s\nStatus code: %d\n\n", _decrypted_string, s);
+    printf("Decrypted string: %s\n Decrypted string length: %d\nStatus code: %d\n\n", *_decrypted_string, (int)*_decrypted_string_length, s);
 
 
     return s;
@@ -113,7 +113,7 @@ int main(int argc, char **strToEncrypt){
     size_t encrypted_string_length;
 
     //Decryption
-    char* decrypted_string = NULL;
+    uint8_t* decrypted_string;
     size_t decrypted_string_length;
 
     int result = 0;
@@ -134,30 +134,35 @@ int main(int argc, char **strToEncrypt){
 //########################################################################################################
 //########################################################################################################
 //########################################################################################################
-//EC-LCM ENCRYPT/DECRYPT Begin
+
+//EC-LCM ENCRYPT/DECRYPT Begin ---------------------------------------------------------------------------
 
     printf("\########### EC_LCM ALGORITHM STARTED ##################\n");
     
     //EC-LCM ENCRYPTING...
     result = EC_LCM_Encrypt(strToEncrypt,              //Input parameter
-                            &encrypted_string,         //Output parameters
-                            &encrypted_string_length); //Output parameters
+                            &encrypted_string,         //Output parameter
+                            &encrypted_string_length); //Output parameter
 
     printf("Outside EC_LCM_Encrypt-->Length encrypted string: %d\n\n", (int)encrypted_string_length);
     printf("Outside EC_LCM_Encrypt-->Content encrypted string :\n\n%s\n\n", encrypted_string);
     printf("EC_LCM_Encrypt function returned: %d code!!\n\n", result);
 
     //EC-LCM DECRYPTING...
-    //result = EC_LCM_Decrypt(&encrypted_string, &encrypted_string_length, &decrypted_string, &decrypted_string_length);
-    //printf("Outside EC_LCM_Decrypt-->Length encrypted string: %d\n\n", (int)decrypted_string_length);
-    //printf("Outside EC_LCM_Decrypt-->Content encrypted string :\n\n%s\n\n", decrypted_string);
-    //printf("EC_LCM_Decrypt function returned: %d code!!\n\n", result);
+    result = EC_LCM_Decrypt(encrypted_string,           //Input encrypted parameter
+                            encrypted_string_length,    //Input encrypted parameter
+                            &decrypted_string,          //Output decrypted parameter
+                            &decrypted_string_length);  //Output decrypted parameter
 
-    //Please, don't forget to free memory!!
+    printf("Outside EC_LCM_Decrypt-->Length decrypted string: %d\n\n", (int)decrypted_string_length);
+    printf("Outside EC_LCM_Decrypt-->Content decrypted string:\n\n%s\n\n\n", decrypted_string);
+    printf("EC_LCM_Decrypt function returned: %d code!!\n\n", result);
+
+    //Please don't forget to free up the memory!
     lecies_free(encrypted_string);
     lecies_free(decrypted_string);
     printf("########### EC_LCM ALGORITHM FINISHED###################\n\n");
-//EC-LCM ENCRYPT/DECRYPT End
+//EC-LCM ENCRYPT/DECRYPT End ----------------------------------------------------------------------------
 
     return 0;
 }
