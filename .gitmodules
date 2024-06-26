@@ -1,0 +1,6 @@
+[submodule "lib/ccrush"]
+	path = lib/ccrush
+	url = https://github.com/GlitchedPolygons/ccrush.git
+[submodule "lib/mbedtls"]
+	path = lib/mbedtls
+	url = https://github.com/Mbed-TLS/mbedtls.git
