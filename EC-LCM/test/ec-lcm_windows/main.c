@@ -61,11 +61,11 @@ static int LCM_Decrypt(char* output, message_t* msg){
     return r;
 }
 
-int EC_LCM_Encrypt(
-    char** strToEncrypt,             //Input parameter
-    uint8_t** _encrypted_string,     //Output encrypted string
-    size_t* _encrypted_string_length //Output string length
-){
+int EC_LCM_Encrypt(char** strToEncrypt,             //Input parameter
+                   
+                   uint8_t** _encrypted_string,     //Output encrypted string
+                   size_t* _encrypted_string_length) //Output string length
+{
 
     int s = 1;
 
@@ -87,22 +87,24 @@ int EC_LCM_Encrypt(
     return s;
 }
 
-int EC_LCM_Decrypt( 
-    uint8_t* _encrypted_string,      //Input encrypted string
-    size_t* _encrypted_string_length,//Input string length
+int EC_LCM_Decrypt( uint8_t* _encrypted_string,      //Input encrypted string
+                    size_t* _encrypted_string_length,//Input string length
 
-    uint8_t** _decrypted_string,     //Output decrypted string
-    size_t* _decrypted_string_length //Output decrypted string length
-) {
+                    uint8_t** _decrypted_string,     //Output decrypted string
+                    size_t* _decrypted_string_length) //Output decrypted string length
+{
 
     int s = 1;
 
     s = lecies_curve25519_decrypt(_encrypted_string, _encrypted_string_length, 0, TEST_CURVE25519_PRIVATE_KEY, _decrypted_string, _decrypted_string_length);
 
-    
+    //if (memcmp(strToCheck, _decrypted_string, _decrypted_string_length) != 0) {
     printf("Decrypted string: %s\n Decrypted string length: %d\nStatus code: %d\n\n", *_decrypted_string, (int)*_decrypted_string_length, s);
-
-
+    //}
+    //else {
+    //    printf("ERROR!!!");
+    //}
+ 
     return s;
 }
 
