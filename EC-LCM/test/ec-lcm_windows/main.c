@@ -12,11 +12,8 @@ message_t temp;
 char decrypted[TAKS_PAYLOAD_LEN];
 
 //EC-LCM Section -- Begin
-static const lecies_curve448_key TEST_PUBLIC_KEY = { .hexstring = "55a9b9d87a26c1add2f61a89f52de9a77fe80178a639a484a07bc7f17c3c1f5930082869f4d7eae98be394db2851fa44b6f8ce95127d9e86" };
-static const lecies_curve448_key TEST_PRIVATE_KEY = { .hexstring = "92898bcfddf14e33d48ab16f46d8ad0290af234edfe3754a0f80528ecaafa6bb769a0f4c2601d48ee24ae38d0316103d8cf932a87df58844" };
 static const lecies_curve25519_key TEST_CURVE25519_PUBLIC_KEY = { .hexstring = "87981c92ede838b434e5fcd9eec9cd45ceaade59f3b72bb9e2088927c50dee07" };
 static const lecies_curve25519_key TEST_CURVE25519_PRIVATE_KEY = { .hexstring = "72dcda48cacaf2969d4faecdbdf1e080a269ccc3c4ce16238050fa95052ad110" };
-
 //EC-LCM Section -- End
 
 static int LCM_Encryption(int argumentNumber, char** str) {
@@ -77,7 +74,6 @@ int EC_LCM_Encrypt(
 
     printf("Encrypting the following string: %s\n\n", strToEncrypt[1]);
 
-    //s = lecies_curve448_encrypt((uint8_t*)strToEncrypt[1], strToEncryptLength, 0, TEST_PUBLIC_KEY, _encrypted_string, _encrypted_string_length, 1);
     s = lecies_curve25519_encrypt((uint8_t*)strToEncrypt[1], strToEncryptLength, 0, TEST_CURVE25519_PUBLIC_KEY, _encrypted_string, _encrypted_string_length, 0);
 
     if (s != 0)
@@ -101,7 +97,6 @@ int EC_LCM_Decrypt(
 
     int s = 1;
 
-    //s = lecies_curve448_decrypt(_encrypted_string, _encrypted_string_length, 1, TEST_PRIVATE_KEY, _decrypted_string, _decrypted_string_length);
     s = lecies_curve25519_decrypt(_encrypted_string, _encrypted_string_length, 0, TEST_CURVE25519_PRIVATE_KEY, _decrypted_string, _decrypted_string_length);
 
     
