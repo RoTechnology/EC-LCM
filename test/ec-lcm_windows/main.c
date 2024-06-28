@@ -7,6 +7,225 @@
 
 #include "LCM.h"
 
+
+//#########################################################################################################################
+//#############################SIGNATURE SECTION BEGIN#####################################################################
+//#########################################################################################################################
+
+#include "mbedtls/build_info.h"
+#if defined(MBEDTLS_PLATFORM_C)
+#include "mbedtls/platform.h"
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#define mbedtls_printf          printf
+#define mbedtls_exit            exit
+#define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
+#define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
+#endif /* MBEDTLS_PLATFORM_C */
+
+#if defined(MBEDTLS_ECDSA_C) && \
+    defined(MBEDTLS_ENTROPY_C) && defined(MBEDTLS_CTR_DRBG_C)
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/sha256.h"
+
+#include <string.h>
+#endif
+
+/*
+ * Uncomment to show key and signature details
+ */
+//#define VERBOSE
+
+ /*
+  * Uncomment to force use of a specific curve
+  */
+#define ECPARAMS    MBEDTLS_ECP_DP_SECP192R1
+//#if !defined(ECPARAMS)
+//#define ECPARAMS    mbedtls_ecp_curve_list()->grp_id
+//#endif
+//
+//#if !defined(MBEDTLS_ECDSA_C) || !defined(MBEDTLS_SHA256_C) || \
+//    !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C)
+//int main(void)
+//{
+//    mbedtls_printf("MBEDTLS_ECDSA_C and/or MBEDTLS_SHA256_C and/or "
+//        "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C not defined\n");
+//    mbedtls_exit(0);
+//}
+//#else
+
+//#if defined(VERBOSE)
+static void dump_buf(const char* title, unsigned char* buf, size_t len)
+{
+    size_t i;
+
+    mbedtls_printf("%s", title);
+    for (i = 0; i < len; i++)
+        mbedtls_printf("%c%c", "0123456789ABCDEF"[buf[i] / 16],
+            "0123456789ABCDEF"[buf[i] % 16]);
+    mbedtls_printf("\n");
+}
+
+static void dump_pubkey(const char* title, mbedtls_ecdsa_context* key)
+{
+    unsigned char buf[300];
+    size_t len;
+
+    if (mbedtls_ecp_point_write_binary(&key->MBEDTLS_PRIVATE(grp), &key->MBEDTLS_PRIVATE(Q),
+        MBEDTLS_ECP_PF_UNCOMPRESSED, &len, buf, sizeof buf) != 0)
+    {
+        mbedtls_printf("internal error\n");
+        return;
+    }
+
+    dump_buf(title, buf, len);
+}
+
+void funtion1( void ) 
+{
+    int ret = 1;
+    int exit_code = MBEDTLS_EXIT_FAILURE;
+    mbedtls_ecdsa_context ctx_sign, ctx_verify;
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+
+
+    const char* pers = "ecdsa";
+    //((void)argv);
+
+    mbedtls_ecdsa_init(&ctx_sign);
+    mbedtls_ecdsa_init(&ctx_verify);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    /*
+     * Generate a key pair for signing
+     */
+    mbedtls_printf("\n  . Seeding the random number generator...");
+    fflush(stdout);
+
+    mbedtls_entropy_init(&entropy);
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+        (const unsigned char*)pers,
+        strlen(pers))) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
+        goto exit;
+    }
+
+    mbedtls_printf(" ok\n  . Generating key pair...");
+    fflush(stdout);
+
+    if ((ret = mbedtls_ecdsa_genkey(&ctx_sign, ECPARAMS,
+        mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_ecdsa_genkey returned %d\n", ret);
+        goto exit;
+    }
+
+    mbedtls_printf(" ok (key size: %d bits)\n", (int)ctx_sign.MBEDTLS_PRIVATE(grp).pbits);
+
+    dump_pubkey("  + Public key: ", &ctx_sign);
+
+//Exit phase...
+exit:
+
+    mbedtls_printf("  + Press Enter to exit this program.\n");
+    fflush(stdout); getchar();
+
+    mbedtls_ecdsa_free(&ctx_verify);
+    mbedtls_ecdsa_free(&ctx_sign);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+    mbedtls_exit(exit_code);
+}
+
+void ComputeMessageToHash(void) 
+{
+    unsigned char message[100];
+    unsigned char message2[100];
+    unsigned char hash[32];
+    unsigned char hash2[32];
+    unsigned char sig[MBEDTLS_ECDSA_MAX_LEN];
+    unsigned char sig_origin[MBEDTLS_ECDSA_MAX_LEN];
+
+    int exit_code = MBEDTLS_EXIT_FAILURE;
+    size_t sig_len;
+    size_t sig_origin_len;
+
+    mbedtls_ecdsa_context ctx_sign, ctx_verify; //To pass
+    mbedtls_ctr_drbg_context ctr_drbg; //To pass
+    mbedtls_entropy_context entropy; // To Pass
+
+
+    memset(sig, 0, sizeof(sig));
+    memset(sig_origin, 0, sizeof(sig_origin));
+
+    sprintf(message, "SiLeccaLaFiga");
+    sprintf(message2, "SiLeccaLAFiga");
+
+    int ret = 1;
+    /*
+     * Compute message to hash...
+     */
+    mbedtls_printf("  . Computing message hash of: %s\n", message);
+    fflush(stdout);
+
+    if ((ret = mbedtls_sha256(message, sizeof(message), hash, 0)) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_sha256 returned %d\n", ret);
+        goto exit;
+    }
+
+    mbedtls_printf(" ok\n");
+
+    //dump_buf( "  + Hash: ", hash, sizeof( hash ) );
+
+    /*
+     * Sign message hash
+     */
+    mbedtls_printf("  . Signing message hash...");
+    fflush(stdout);
+
+    if ((ret = mbedtls_ecdsa_write_signature(&ctx_sign, MBEDTLS_MD_SHA256,
+        hash, sizeof(hash),
+        sig, sizeof(sig), &sig_len,
+        mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_ecdsa_write_signature returned %d\n", ret);
+        goto exit;
+    }
+    mbedtls_printf(" ok (signature length = %u)\n\n", (unsigned int)sig_len);
+
+    mbedtls_printf("  + Hash of '%s' is: ", message); dump_buf("", hash, sizeof(hash));
+    mbedtls_printf("  + Signature of '%s' is: ", message); dump_buf("", sig, sig_len);
+
+
+    memcpy(sig_origin, sig, sig_len);
+    sig_origin_len = sig_len;
+    //dump_buf( "  + Signature: ", sig, sig_len );
+
+//Exit phase...
+exit:
+
+    mbedtls_printf("  + Press Enter to exit this program.\n");
+    fflush(stdout); getchar();
+
+    mbedtls_ecdsa_free(&ctx_verify);
+    mbedtls_ecdsa_free(&ctx_sign);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+    mbedtls_exit(exit_code);
+}
+//#########################################################################################################################
+//#############################SIGNATURE SECTION END#######################################################################
+//#########################################################################################################################
+
+
 //LCM Encryption Section
 message_t temp;
 char decrypted[TAKS_PAYLOAD_LEN];

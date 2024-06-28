@@ -102,7 +102,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -110,7 +110,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lecies.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lecies.lib;mbedcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -137,6 +137,70 @@
     <ClInclude Include="..\src\windows\guid.h" />
     <ClInclude Include="..\src\windows\keygen.h" />
     <ClInclude Include="..\src\windows\LCM.h" />
+    <ClInclude Include="..\src\windows\mbedtls\aes.h" />
+    <ClInclude Include="..\src\windows\mbedtls\aria.h" />
+    <ClInclude Include="..\src\windows\mbedtls\asn1.h" />
+    <ClInclude Include="..\src\windows\mbedtls\asn1write.h" />
+    <ClInclude Include="..\src\windows\mbedtls\base64.h" />
+    <ClInclude Include="..\src\windows\mbedtls\bignum.h" />
+    <ClInclude Include="..\src\windows\mbedtls\build_info.h" />
+    <ClInclude Include="..\src\windows\mbedtls\camellia.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ccm.h" />
+    <ClInclude Include="..\src\windows\mbedtls\chacha20.h" />
+    <ClInclude Include="..\src\windows\mbedtls\chachapoly.h" />
+    <ClInclude Include="..\src\windows\mbedtls\check_config.h" />
+    <ClInclude Include="..\src\windows\mbedtls\cipher.h" />
+    <ClInclude Include="..\src\windows\mbedtls\cmac.h" />
+    <ClInclude Include="..\src\windows\mbedtls\compat-2.x.h" />
+    <ClInclude Include="..\src\windows\mbedtls\config_psa.h" />
+    <ClInclude Include="..\src\windows\mbedtls\constant_time.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ctr_drbg.h" />
+    <ClInclude Include="..\src\windows\mbedtls\debug.h" />
+    <ClInclude Include="..\src\windows\mbedtls\des.h" />
+    <ClInclude Include="..\src\windows\mbedtls\dhm.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ecdh.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ecdsa.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ecjpake.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ecp.h" />
+    <ClInclude Include="..\src\windows\mbedtls\entropy.h" />
+    <ClInclude Include="..\src\windows\mbedtls\error.h" />
+    <ClInclude Include="..\src\windows\mbedtls\gcm.h" />
+    <ClInclude Include="..\src\windows\mbedtls\hkdf.h" />
+    <ClInclude Include="..\src\windows\mbedtls\hmac_drbg.h" />
+    <ClInclude Include="..\src\windows\mbedtls\mbedtls_config.h" />
+    <ClInclude Include="..\src\windows\mbedtls\md.h" />
+    <ClInclude Include="..\src\windows\mbedtls\md5.h" />
+    <ClInclude Include="..\src\windows\mbedtls\memory_buffer_alloc.h" />
+    <ClInclude Include="..\src\windows\mbedtls\net_sockets.h" />
+    <ClInclude Include="..\src\windows\mbedtls\nist_kw.h" />
+    <ClInclude Include="..\src\windows\mbedtls\oid.h" />
+    <ClInclude Include="..\src\windows\mbedtls\pem.h" />
+    <ClInclude Include="..\src\windows\mbedtls\pk.h" />
+    <ClInclude Include="..\src\windows\mbedtls\pkcs12.h" />
+    <ClInclude Include="..\src\windows\mbedtls\pkcs5.h" />
+    <ClInclude Include="..\src\windows\mbedtls\platform.h" />
+    <ClInclude Include="..\src\windows\mbedtls\platform_time.h" />
+    <ClInclude Include="..\src\windows\mbedtls\platform_util.h" />
+    <ClInclude Include="..\src\windows\mbedtls\poly1305.h" />
+    <ClInclude Include="..\src\windows\mbedtls\private_access.h" />
+    <ClInclude Include="..\src\windows\mbedtls\psa_util.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ripemd160.h" />
+    <ClInclude Include="..\src\windows\mbedtls\rsa.h" />
+    <ClInclude Include="..\src\windows\mbedtls\sha1.h" />
+    <ClInclude Include="..\src\windows\mbedtls\sha256.h" />
+    <ClInclude Include="..\src\windows\mbedtls\sha512.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ssl.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ssl_cache.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ssl_ciphersuites.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ssl_cookie.h" />
+    <ClInclude Include="..\src\windows\mbedtls\ssl_ticket.h" />
+    <ClInclude Include="..\src\windows\mbedtls\threading.h" />
+    <ClInclude Include="..\src\windows\mbedtls\timing.h" />
+    <ClInclude Include="..\src\windows\mbedtls\version.h" />
+    <ClInclude Include="..\src\windows\mbedtls\x509.h" />
+    <ClInclude Include="..\src\windows\mbedtls\x509_crl.h" />
+    <ClInclude Include="..\src\windows\mbedtls\x509_crt.h" />
+    <ClInclude Include="..\src\windows\mbedtls\x509_csr.h" />
     <ClInclude Include="..\src\windows\Taks.h" />
     <ClInclude Include="..\src\windows\types.h" />
     <ClInclude Include="..\src\windows\util.h" />
