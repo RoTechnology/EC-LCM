@@ -34,30 +34,36 @@
 #include <string.h>
 #endif
 
+
 /*
  * Uncomment to show key and signature details
  */
-//#define VERBOSE
+#define VERBOSE
 
  /*
   * Uncomment to force use of a specific curve
   */
 #define ECPARAMS    MBEDTLS_ECP_DP_SECP192R1
-//#if !defined(ECPARAMS)
-//#define ECPARAMS    mbedtls_ecp_curve_list()->grp_id
-//#endif
-//
-//#if !defined(MBEDTLS_ECDSA_C) || !defined(MBEDTLS_SHA256_C) || \
-//    !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C)
-//int main(void)
-//{
-//    mbedtls_printf("MBEDTLS_ECDSA_C and/or MBEDTLS_SHA256_C and/or "
-//        "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C not defined\n");
-//    mbedtls_exit(0);
-//}
-//#else
+#if !defined(ECPARAMS)
+#define ECPARAMS    mbedtls_ecp_curve_list()->grp_id
+#endif
 
-//#if defined(VERBOSE)
+//Global variables
+unsigned char message[300];
+unsigned char message2[300];
+unsigned char hash[32];
+unsigned char hash2[32];
+unsigned char sig[MBEDTLS_ECDSA_MAX_LEN];
+unsigned char sig_origin[MBEDTLS_ECDSA_MAX_LEN];
+size_t sig_len;
+size_t sig_origin_len;
+
+mbedtls_ecdsa_context ctx_sign, ctx_verify;
+mbedtls_entropy_context entropy;
+mbedtls_ctr_drbg_context ctr_drbg;
+
+
+
 static void dump_buf(const char* title, unsigned char* buf, size_t len)
 {
     size_t i;
@@ -84,17 +90,10 @@ static void dump_pubkey(const char* title, mbedtls_ecdsa_context* key)
     dump_buf(title, buf, len);
 }
 
-void funtion1( void ) 
+int keyPairGeneration( void )
 {
     int ret = 1;
-    int exit_code = MBEDTLS_EXIT_FAILURE;
-    mbedtls_ecdsa_context ctx_sign, ctx_verify;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-
-
     const char* pers = "ecdsa";
-    //((void)argv);
 
     mbedtls_ecdsa_init(&ctx_sign);
     mbedtls_ecdsa_init(&ctx_verify);
@@ -112,7 +111,7 @@ void funtion1( void )
         strlen(pers))) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
-        goto exit;
+        return MBEDTLS_EXIT_FAILURE;
     }
 
     mbedtls_printf(" ok\n  . Generating key pair...");
@@ -122,67 +121,38 @@ void funtion1( void )
         mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_ecdsa_genkey returned %d\n", ret);
-        goto exit;
+        return MBEDTLS_EXIT_FAILURE;
     }
 
     mbedtls_printf(" ok (key size: %d bits)\n", (int)ctx_sign.MBEDTLS_PRIVATE(grp).pbits);
 
     dump_pubkey("  + Public key: ", &ctx_sign);
-
-//Exit phase...
-exit:
-
-    mbedtls_printf("  + Press Enter to exit this program.\n");
-    fflush(stdout); getchar();
-
-    mbedtls_ecdsa_free(&ctx_verify);
-    mbedtls_ecdsa_free(&ctx_sign);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
-
-    mbedtls_exit(exit_code);
+ 
+    return MBEDTLS_EXIT_SUCCESS;
 }
 
-void ComputeMessageToHash(void) 
+int computeMessageHashAndSignature(char **strToSign) 
 {
-    unsigned char message[100];
-    unsigned char message2[100];
-    unsigned char hash[32];
-    unsigned char hash2[32];
-    unsigned char sig[MBEDTLS_ECDSA_MAX_LEN];
-    unsigned char sig_origin[MBEDTLS_ECDSA_MAX_LEN];
-
-    int exit_code = MBEDTLS_EXIT_FAILURE;
-    size_t sig_len;
-    size_t sig_origin_len;
-
-    mbedtls_ecdsa_context ctx_sign, ctx_verify; //To pass
-    mbedtls_ctr_drbg_context ctr_drbg; //To pass
-    mbedtls_entropy_context entropy; // To Pass
-
-
     memset(sig, 0, sizeof(sig));
     memset(sig_origin, 0, sizeof(sig_origin));
 
-    sprintf(message, "SiLeccaLaFiga");
-    sprintf(message2, "SiLeccaLAFiga");
+    sprintf(message, strToSign[1]);
 
     int ret = 1;
     /*
      * Compute message to hash...
      */
-    mbedtls_printf("  . Computing message hash of: %s\n", message);
+    mbedtls_printf("  . Computing message hash of: %s\n", strToSign[1]);
     fflush(stdout);
 
-    if ((ret = mbedtls_sha256(message, sizeof(message), hash, 0)) != 0)
+    //if ((ret = mbedtls_sha256(message, sizeof(message), hash, 0)) != 0)
+    if ((ret = mbedtls_sha256(strToSign[1], strlen(strToSign[1]), hash, 0)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_sha256 returned %d\n", ret);
-        goto exit;
+        return MBEDTLS_EXIT_FAILURE;
     }
 
     mbedtls_printf(" ok\n");
-
-    //dump_buf( "  + Hash: ", hash, sizeof( hash ) );
 
     /*
      * Sign message hash
@@ -191,35 +161,94 @@ void ComputeMessageToHash(void)
     fflush(stdout);
 
     if ((ret = mbedtls_ecdsa_write_signature(&ctx_sign, MBEDTLS_MD_SHA256,
-        hash, sizeof(hash),
-        sig, sizeof(sig), &sig_len,
-        mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
+                                                hash, sizeof(hash),
+                                                sig, sizeof(sig), &sig_len,
+                                                mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_ecdsa_write_signature returned %d\n", ret);
-        goto exit;
+        return MBEDTLS_EXIT_FAILURE;
     }
     mbedtls_printf(" ok (signature length = %u)\n\n", (unsigned int)sig_len);
 
-    mbedtls_printf("  + Hash of '%s' is: ", message); dump_buf("", hash, sizeof(hash));
-    mbedtls_printf("  + Signature of '%s' is: ", message); dump_buf("", sig, sig_len);
+    mbedtls_printf("  + Hash of '%s' is: ", strToSign[1]); dump_buf("", hash, sizeof(hash));
+    mbedtls_printf("  + Signature of '%s' is: ", strToSign[1]); dump_buf("", sig, sig_len);
 
 
+    //********************************************************************
+    //After generation the message sign, it will be send to destination.
     memcpy(sig_origin, sig, sig_len);
     sig_origin_len = sig_len;
-    //dump_buf( "  + Signature: ", sig, sig_len );
+    //********************************************************************
+    
 
-//Exit phase...
-exit:
+    return MBEDTLS_EXIT_SUCCESS;
+}
 
-    mbedtls_printf("  + Press Enter to exit this program.\n");
-    fflush(stdout); getchar();
+int signatureVerification(uint8_t* _decrypted_string)
+{
+    int ret = 1;
+
+    mbedtls_printf("\n\n  . Preparing verification context...\n\n");
+    fflush(stdout);
+
+    if ((ret = mbedtls_ecp_group_copy(&ctx_verify.MBEDTLS_PRIVATE(grp), &ctx_sign.MBEDTLS_PRIVATE(grp))) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_ecp_group_copy returned %d\n", ret);
+        return MBEDTLS_EXIT_FAILURE;
+    }
+
+    if ((ret = mbedtls_ecp_copy(&ctx_verify.MBEDTLS_PRIVATE(Q), &ctx_sign.MBEDTLS_PRIVATE(Q))) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_ecp_copy returned %d\n", ret);
+        return MBEDTLS_EXIT_FAILURE;
+    }
+
+    /*
+     * Verify signature
+     */
+     /*
+      * Generating 'hash' from decrypted message...
+      */
+    if ((ret = mbedtls_sha256(_decrypted_string, strlen(_decrypted_string), hash2, 0)) != 0)
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_sha256 returned %d\n", ret);
+        return MBEDTLS_EXIT_FAILURE;
+    }
+
+    mbedtls_printf(" ok\n  . Verifying signature between...'%s' and '%s'...\n", message, _decrypted_string);
+    fflush(stdout);
+
+    //Read and Check the Signature
+    if ((ret = mbedtls_ecdsa_read_signature(&ctx_verify,
+                                            hash2, sizeof(hash2),
+                                            sig_origin, sig_origin_len)) != 0)
+    {
+        mbedtls_printf("  + Hash of decrypted message '%s' is: ", _decrypted_string); dump_buf("", hash2, sizeof(hash2));
+        mbedtls_printf("  + Signature of decrypted message '%s' is: ", _decrypted_string); dump_buf("", sig_origin, sig_origin_len);
+        mbedtls_printf("  + Signature of original message '%s' is: ", message); dump_buf("", sig, sig_len);
+        mbedtls_printf(" failed\n  ! mbedtls_ecdsa_read_signature returned:  %d\n", ret);
+        return MBEDTLS_EXIT_FAILURE;
+    }
+
+
+    mbedtls_printf("  + Hash of decrypted message '%s' is: ", _decrypted_string); dump_buf("", hash2, sizeof(hash2));
+    mbedtls_printf("  + Signature of decrypted message '%s' is: ", _decrypted_string); dump_buf("", sig_origin, sig_origin_len);
+    mbedtls_printf("  + Signature of original message '%s' is: ", message); dump_buf("", sig, sig_len);
+    mbedtls_printf(" ok\n");
+    return MBEDTLS_EXIT_SUCCESS;
+}
+
+void ecdsa_free() 
+{
+    //mbedtls_printf("  + Press Enter to exit this program.\n");
+    //fflush(stdout); getchar();
 
     mbedtls_ecdsa_free(&ctx_verify);
     mbedtls_ecdsa_free(&ctx_sign);
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
 
-    mbedtls_exit(exit_code);
+    //mbedtls_exit(_exit_code);
 }
 //#########################################################################################################################
 //#############################SIGNATURE SECTION END#######################################################################
@@ -317,19 +346,15 @@ int EC_LCM_Decrypt( uint8_t* _encrypted_string,      //Input encrypted string
 
     s = lecies_curve25519_decrypt(_encrypted_string, _encrypted_string_length, 0, TEST_CURVE25519_PRIVATE_KEY, _decrypted_string, _decrypted_string_length);
 
-    //if (memcmp(strToCheck, _decrypted_string, _decrypted_string_length) != 0) {
     printf("Decrypted string: %s\n Decrypted string length: %d\nStatus code: %d\n\n", *_decrypted_string, (int)*_decrypted_string_length, s);
-    //}
-    //else {
-    //    printf("ERROR!!!");
-    //}
+
  
     return s;
 }
 
-
-
 int main(int argc, char **strToEncrypt){
+    int result = 0;
+
     //Encryption
     uint8_t* encrypted_string;
     size_t encrypted_string_length;
@@ -337,20 +362,28 @@ int main(int argc, char **strToEncrypt){
     //Decryption
     uint8_t* decrypted_string;
     size_t decrypted_string_length;
-
-    int result = 0;
   
+ 
 
+    //Signing ecdsa phase
+    //Generate a key pair for signing
+    if (result = keyPairGeneration() != MBEDTLS_EXIT_SUCCESS)
+    {
+        mbedtls_printf(" failed\n  !keyPairGeneration %d\n", result);
+    }
+    else if (result = computeMessageHashAndSignature(strToEncrypt) != MBEDTLS_EXIT_SUCCESS) {
+        mbedtls_printf(" failed\n  !computeMessageHashAndSignature %d\n", result);
+    }
+    
     //LCM ENCRYPT/DECRYPT Begin
-    initNodes();
-    printf("\########### LCM ALGORITHM STARTED #######################\n");
-    result = LCM_Encryption(argc, strToEncrypt);
-    printf("\LCM_Encryption RESULT CODE: %d\n\n", result);
-
-    result = LCM_Decrypt(decrypted, &temp);
-    printf("\########### LCM ALGORITHM TERMINATED ################## %d\n\n\n\n", result);
+    //initNodes();
+    //printf("\########### LCM ALGORITHM STARTED #######################\n");
+    //result = LCM_Encryption(argc, strToEncrypt);
+    //printf("\LCM_Encryption RESULT CODE: %d\n\n", result);
+    //
+    //result = LCM_Decrypt(decrypted, &temp);
+    //printf("\########### LCM ALGORITHM TERMINATED ################## %d\n\n\n\n", result);
     //LCM ENCRYPT/DECRYPT End
-
 
 //########################################################################################################
 //########################################################################################################
@@ -358,7 +391,6 @@ int main(int argc, char **strToEncrypt){
 //########################################################################################################
 
 //EC-LCM ENCRYPT/DECRYPT Begin ---------------------------------------------------------------------------
-
     printf("\########### EC_LCM ALGORITHM STARTED ##################\n");
     
     //EC-LCM ENCRYPTING...
@@ -380,11 +412,21 @@ int main(int argc, char **strToEncrypt){
     printf("Outside EC_LCM_Decrypt-->Content decrypted string:\n\n%s\n\n\n", decrypted_string);
     printf("EC_LCM_Decrypt function returned: %d code!!\n\n", result);
 
+    if ( result = signatureVerification(decrypted_string) != MBEDTLS_EXIT_SUCCESS ) //Signing phase
+    {
+        mbedtls_printf(" failed\n  !verificationSignContext %d\n", result);
+    }
+
+
     //Please don't forget to free up the memory!
     lecies_free(encrypted_string);
     lecies_free(decrypted_string);
     printf("########### EC_LCM ALGORITHM FINISHED###################\n\n");
 //EC-LCM ENCRYPT/DECRYPT End ----------------------------------------------------------------------------
+
+
+    ecdsa_free(); //Signing phase
+
 
     return 0;
 }
