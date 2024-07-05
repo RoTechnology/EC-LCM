@@ -11,5 +11,7 @@ The  component offers security features for communications between different ent
 Moreover, the component verifies the authenticity of the message through a digital signature.
 
 ### How to use
-
-In progress...
+To correctly use the library follow these steps:
+1. Include the .h files in [EC-LCM/src/windows](https://github.com/RoTechnology/EC-LCM/tree/main/src/windows) into the project folder
+2. Include the linked library in [EC-LCM/lib](https://github.com/RoTechnology/EC-LCM/tree/main/lib) folder into the lib folder
+3. Compile main.c in test folder and run your code
